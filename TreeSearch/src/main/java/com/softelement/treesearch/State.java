@@ -1,5 +1,11 @@
 package com.softelement.treesearch;
 
+/**
+ * 
+ * @author "SoftElement"
+ * State POJO class.
+ * 
+ */
 public class State {
 	
 	private String leftSide;
@@ -32,6 +38,9 @@ public class State {
 		return String.format("[%s, %s]", leftSide, rightSide);
 	}
 	
+	/**
+	 * Equals operator redefinition, needed for searching in ArrayList of nodes
+	 */
 	@Override public boolean equals(Object o) {
 	    //check for self-comparison
 	    if (this == o) { return true; }

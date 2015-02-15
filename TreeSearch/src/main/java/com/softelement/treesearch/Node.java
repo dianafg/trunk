@@ -2,6 +2,12 @@ package com.softelement.treesearch;
 
 import java.util.Arrays;
 
+/**
+ * 
+ * @author "SoftElement"
+ * Node POJO class.
+ * 
+ */
 public class Node {
 	
 	private State state;
@@ -51,7 +57,8 @@ public class Node {
 		this.level = level;
 	}
 	
-	@Override public String toString() {
+	@Override 
+	public String toString() {
 		//Level padding: a '-' for each level down the decision tree
 		char[] chars = new char[level + 1];
 		Arrays.fill(chars, '-');
@@ -59,6 +66,11 @@ public class Node {
 		return String.format("%s> State: %s - Action: %s", levelPadding, state.toString(), action.toString()); 
 	}
 
+	/**
+	 * Recursively generates a string containing the path to a node
+	 * from the tree root. 
+	 * @return
+	 */
 	public String pathTo() {
 		if (parent == null) {
 			return (String.format("\n%s", this.toString()));

@@ -1,5 +1,11 @@
 package com.softelement.treesearch;
 
+/**
+ * 
+ * @author "SoftElement"
+ * Action POJO class.
+ *
+ */
 public class Action {
 	
 	private String action;
@@ -12,18 +18,22 @@ public class Action {
 		this.action = action;
 	}
 	
+	public Action() {
+		action = "-";	//Aesthetic, for initial state node toString()
+	}
+	
 	public Action(String action) {
 		this.action = action;
 	}
 	
+	@Override
 	public String toString() {
 		return String.format("%s", action);
 	}
 	
-	public Action() {
-		action = "-";
-	}
-	
+	/**
+	 * Equals operator redefinition, needed for searching in ArrayList of nodes
+	 */
 	@Override public boolean equals(Object o) {
 	    //check for self-comparison
 	    if (this == o) { return true; }
@@ -32,5 +42,5 @@ public class Action {
 	    return (
 	    		this.getAction().equals(action.getAction())
 	    );
-	  } 
+	}
 }

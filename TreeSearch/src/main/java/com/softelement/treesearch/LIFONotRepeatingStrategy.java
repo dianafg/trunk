@@ -2,8 +2,16 @@ package com.softelement.treesearch;
 
 import java.util.ArrayList;
 
+/**
+ * 
+ * @author "SoftElement"
+ * Strategy class for LIFO (width first) search
+ * not inserting already selected nodes in fringe.
+ *
+ */
 public class LIFONotRepeatingStrategy implements IStrategy {
 
+	//List of already selected nodes in previous calls to selectNextNode
 	private ArrayList<Node> alreadySelectedNodes;
 	
 	public LIFONotRepeatingStrategy() {
@@ -13,10 +21,10 @@ public class LIFONotRepeatingStrategy implements IStrategy {
 	@Override
 	public NodeWrapper selectNextNode(ArrayList<Node> fringe) {
 
-		//Select next node with FIFO strategy
+		//Select next node with LIFO strategy
 		if (!fringe.isEmpty()) {
 			NodeWrapper nodeWrapper = new NodeWrapper();
-			//Find first not already selected node (ignore parent and level)
+			//Get LAST (LIFO) not already selected node
 			boolean found = false;
 			Node node = null;
 			int pos;
@@ -24,7 +32,7 @@ public class LIFONotRepeatingStrategy implements IStrategy {
 				node = fringe.get(pos);
 				if (!alreadySelected(node)) { found = true; break; }
 			}
-			if (!found) { 
+			if (!found) { //All nodes has been previously selected
 				return null; 
 			} else {
 				nodeWrapper.setNode(node);
@@ -33,13 +41,21 @@ public class LIFONotRepeatingStrategy implements IStrategy {
 				alreadySelectedNodes.add(node);
 				return nodeWrapper;
 			}
-		} else {
+		} else {	//Empty fringe
 			return null;
 		}
 	}
 	
+	/**
+	 * Finds node in the list of already selected nodes,
+	 * comparing by State and Action (ignores Parent and Level)
+	 * Requires overridden equals methods in State and Action 
+	 * to correctly compare nodes.
+	 * @param node
+	 * @return
+	 */
 	protected boolean alreadySelected(Node node) {
-		//Compare only Action and State, not Level nor Parent
+
 		boolean found = false;
 		for (Node selectedNode : alreadySelectedNodes) {
 			if (

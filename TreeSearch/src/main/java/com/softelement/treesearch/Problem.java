@@ -2,9 +2,21 @@ package com.softelement.treesearch;
 
 import java.util.ArrayList;
 
+/**
+ * 
+ * @author "SoftElement"
+ * Controller class for TreeSearch.
+ * Implements the transition function (applying the Actions to the States).
+ * Defines the initial, final and valid States.
+ * Contains the fringe.
+ * Defines some data needed for execution.
+ *
+ */
 public class Problem {
 	
-	//Security depth cut-off to avoid infinite loops
+	/**
+	 * Security depth cut-off to avoid infinite loops
+	 */
 	public static final int cutOffLevel = 20;
 	
 	private enum RiverSide {
@@ -12,19 +24,19 @@ public class Problem {
 		RightSide
 	}
 	
+	/**
+	 * Static list of valid states. Newly expanded nodes are checked against this list. 
+	 */
 	protected static ArrayList<State> validStates;
 	
+	/**
+	 * Fringe: list of current candidate nodes to be explored.
+	 */
 	private ArrayList<Node> fringe;
-	private int currentNodePosition;
-	private int nodeCountGenerated;
-	private int nodeCountExplored;
 	
-	public Problem() {
-		initializeValidStates();
-		Node node = new Node(Problem.getInitialState(), new Action());
-		fringe = new ArrayList<Node>();
-		fringe.add(node);	
-	}
+	private int currentNodePosition; //Position in fringe of the node being explored currently
+	private int nodeCountGenerated;	//Counter for nodes generated during the search
+	private int nodeCountExplored;	//Counter for nodes explored (expanded) during the search
 	
 	public ArrayList<Node> getFringe() {
 		return fringe;
@@ -58,10 +70,26 @@ public class Problem {
 		this.nodeCountExplored = nodeCountExplored;
 	}
 
+	/**
+	 * Constructor
+	 */
+	public Problem() {
+		initializeValidStates();
+		//Initialize fringe with initial state node
+		Node node = new Node(Problem.getInitialState(), new Action());
+		fringe = new ArrayList<Node>();
+		fringe.add(node);	
+	}
+	
 	public boolean fringeIsEmpty() {
 		return (fringe.isEmpty());
 	}
 
+	/**
+	 * Explores a fringe node, removing it from the fringe,
+	 * generating its children and adding then to the end of the fringe.
+	 * @param nodeWrapper Node to be explored
+	 */
 	public void expandFringeNode(NodeWrapper nodeWrapper) {
 		
 		int nodePosition = nodeWrapper.getNodePosition();
@@ -70,16 +98,25 @@ public class Problem {
 		//Remove current node from fringe
 		fringe.remove(nodePosition);
 
-		//Add children nodes to fringe
+		//Generate children nodes applying the transition function
 		ArrayList<Node> childrenNodes = createChildrenNodes(node);
-		//fringe.addAll(nodePosition, childrenNodes);
+		//Add children nodes to the end of the fringe
+		//Note: if they were added at a different position, for instance at the current node position,
+		//the search strategy would be different.
+		//Perhaps this operation should be done in the Strategy class.
 		fringe.addAll(fringe.size(), childrenNodes);
+		//Inserting children at current node position: fringe.addAll(nodePosition, childrenNodes);
 
 		//Update node counters
 		this.nodeCountExplored++;
 		this.nodeCountGenerated += childrenNodes.size();
 	}
 	
+	/**
+	 * Expand current node by applying the transition function.
+	 * @param node Parent node to be expanded
+	 * @return List of newly generated children
+	 */
 	protected ArrayList<Node> createChildrenNodes(Node node) {
 		
 		State state = node.getState();
@@ -90,7 +127,8 @@ public class Problem {
 				: RiverSide.RightSide
 		);
 		
-		//Compose actions list
+		//Compose list of actions to apply 
+		//(do not evaluate now if they are applicable to the current state)
 		ArrayList<String> actions = new ArrayList<String>();
 		actions.add("2M");
 		actions.add("1M");
@@ -98,24 +136,35 @@ public class Problem {
 		actions.add("1C");
 		actions.add("1M|1C");
 		
-		//Create 0 or 1 children node for each action
+		//Apply each action and generate valid children nodes
 		ArrayList<Node> childrenNodes = new ArrayList<Node>();
 		for (String action : actions) {
 			Node childrenNode = applyAction(action, riverSide, state);
 			if (childrenNode != null) { childrenNodes.add(childrenNode); }
 		}
 		
-		if (!childrenNodes.isEmpty()) {
+		if (!childrenNodes.isEmpty()) {	//Some of the generated children were valid
 			for (Node child : childrenNodes) {
+				//Set tree info: parent and level
 				child.setParent(node);
 				child.setLevel(node.getLevel() + 1);
 			}
 			return childrenNodes;
-		} else {
+		} else {	//No valid children
 			return null;
 		}
 	}
 
+	/**
+	 * Implements the state transition function.
+	 * Applies an Action to the previous State and generates one child node.
+	 * Checks the validity of the child node State against a static list of valid States,
+	 * if the child node is valid then it is returned, otherwise it is discarded.
+	 * @param action
+	 * @param previousRiverSide
+	 * @param previousState
+	 * @return A children node, or null if the action is not valid for the current State
+	 */
 	protected Node applyAction(String action, RiverSide previousRiverSide, State previousState) {
 			
 		Node newNode;
@@ -126,6 +175,8 @@ public class Problem {
 		ArrayList<String> newLeftSide = new ArrayList<String>();
 		ArrayList<String> newRightSide = new ArrayList<String>();
 
+		//For the current action, calculate how many M and C are in each river side 
+		//after applying the action to the previous state
 		switch (action) {
 		case "2M":
 			if (previousRiverSide.equals(RiverSide.LeftSide)) {
@@ -200,25 +251,29 @@ public class Problem {
 		default:
 		}
 		
-		//Check quantities between 0 and 3
+		//Check validity of quantities of M and C in each river side: they must be between 0 and 3
 		if (howManyMLeft < 0 || howManyMLeft > 3) return null;
-		if (howManyMLeft != 0) { newLeftSide.add(String.format("%sM", String.valueOf(howManyMLeft))); }
 		if (howManyCLeft < 0 || howManyCLeft > 3) return null;
-		if (howManyCLeft != 0) { newLeftSide.add(String.format("%sC", String.valueOf(howManyCLeft))); }
 		if (howManyMRight < 0 || howManyMRight > 3) return null;
-		if (howManyMRight != 0) { newRightSide.add(String.format("%sM", String.valueOf(howManyMRight))); }
 		if (howManyCRight < 0 || howManyCRight > 3) return null;
+
+		//Generate State string fragments for each river side with the new quantities of M and C
+		if (howManyMLeft != 0) { newLeftSide.add(String.format("%sM", String.valueOf(howManyMLeft))); }
+		if (howManyCLeft != 0) { newLeftSide.add(String.format("%sC", String.valueOf(howManyCLeft))); }
+		if (howManyMRight != 0) { newRightSide.add(String.format("%sM", String.valueOf(howManyMRight))); }
 		if (howManyCRight != 0) { newRightSide.add(String.format("%sC", String.valueOf(howManyCRight))); }
-		//Change boat side
+
+		//Change boat side, generate State string fragment
 		if (previousRiverSide.equals(RiverSide.LeftSide)) 
 			{ newRightSide.add("B"); }
 		else
 			{ newLeftSide.add("B"); }
 		
-		//Join state fragments and compose node
+		//Join state string fragments and compose node
 		State newState = new State(join(newLeftSide), join(newRightSide));
+
 		//Check if the State is in the valid states list
-		if (validStates.contains(newState)) { 
+		if (validStates.contains(newState)) {	//Valid state 
 			newNode = new Node(newState, new Action(action));
 			return newNode;
 		} else {	//Not a valid state (more Cs than Ms in some side)
@@ -226,10 +281,20 @@ public class Problem {
 		}
 	}
 	
+	/**
+	 * Parses State string to find the boat
+	 * @param state
+	 * @return
+	 */
 	protected boolean boatIsInLeftSide(State state) {
 		return (state.getLeftSide().contains("B"));
 	}
 	
+	/**
+	 * Parses State string
+	 * @param state
+	 * @return Quantity of M in left river side
+	 */
 	protected int howManyMLeft(State state) {
 		if (state.getLeftSide().contains("3M")) { return 3; }
 		else if (state.getLeftSide().contains("2M")) { return 2; }
@@ -237,6 +302,11 @@ public class Problem {
 		else { return 0; }
 	}
 	
+	/**
+	 * Parses State string
+	 * @param state
+	 * @return Quantity of M in right river side
+	 */
 	protected int howManyMRight(State state) {
 		if (state.getRightSide().contains("3M")) { return 3; }
 		else if (state.getRightSide().contains("2M")) { return 2; }
@@ -244,6 +314,11 @@ public class Problem {
 		else { return 0; }
 	}
 	
+	/**
+	 * Parses State string
+	 * @param state
+	 * @return Quantity of C in left river side
+	 */
 	protected int howManyCLeft(State state) {
 		if (state.getLeftSide().contains("3C")) { return 3; }
 		else if (state.getLeftSide().contains("2C")) { return 2; }
@@ -251,6 +326,11 @@ public class Problem {
 		else { return 0; }
 	}
 	
+	/**
+	 * Parses State string
+	 * @param state
+	 * @return Quantity of C in right river side
+	 */
 	protected int howManyCRight(State state) {
 		if (state.getRightSide().contains("3C")) { return 3; }
 		else if (state.getRightSide().contains("2C")) { return 2; }
@@ -258,11 +338,22 @@ public class Problem {
 		else { return 0; }
 	}
 
+	/**
+	 * Invokes Strategy selectNextNode method.
+	 * @param strategy
+	 * @return Next node with some extra info.
+	 */
 	public NodeWrapper selectNextNode(IStrategy strategy) {
-		
+				
 		return strategy.selectNextNode(fringe);
 	}
 
+	/**
+	 * Checks if this state is a final state of the problem 
+	 * (the solution has been found).
+	 * @param state
+	 * @return
+	 */
 	public boolean goalTest(State state) {
 		return (
 			state.getLeftSide().contentEquals("")
@@ -271,6 +362,10 @@ public class Problem {
 		);
 	}
 	
+	/**
+	 * Composes initial State of the problem.
+	 * @return
+	 */
 	public static State getInitialState() {
 		State state = new State();
 		state.setLeftSide("3M|3C|B");
@@ -278,6 +373,12 @@ public class Problem {
 		return state;
 	}
 	
+	/**
+	 * Fills the static list of valid States of the problem.
+	 * Any expanded children not included in this list will be discarded.
+	 * State.equals method must be overridden to correctly find States in this list.
+	 *  
+	 */
 	protected static void initializeValidStates() {
 		
 		validStates = new ArrayList<State>();
@@ -305,6 +406,11 @@ public class Problem {
 		validStates.add(new State("",     "3M|3C|B"));				
 	}
 	
+	/**
+	 * Utility method to concatenate State string fragments with '|' separator.
+	 * @param al List of string fragments to be concatenated
+	 * @return
+	 */
 	protected String join(ArrayList<String> al) {
 		
 		StringBuilder sb = new StringBuilder();
@@ -318,33 +424,8 @@ public class Problem {
 }
 	
 
-//	//Only allowed combinations
-//	"3M|3C|B", ""
-//	"3M|2C|B", "1C"
-//	"3M|2C",   "1C|B"
-//	"3M|1C|B", "2C"
-//	"3M|1C",   "2C|B"
-//	"3M|B",    "3C"
-//	"3M",      "3C|B"
-//	
-//	"2M|2C|B", "1M|1C"
-//	"2M|2C",   "1M|1C|B"
-//	
-//	"1M|1C|B", "2M|2C"
-//	"1M|1C",   "2M|2C|B"
-//	
-//	"3C|B", "3M"
-//	"3C",   "3M|B"
-//	"2C|B", "3M|1C"
-//	"2C",   "3M|1C|B"
-//	"1C|B", "3M|2C"
-//	"1C",   "3M|2C|B"
-//	"",     "3M|3C|B"
 	
-
-	
-	
-//	//All combinations
+//	//All State combinations (including not valid)
 //	"3M|3C|B", ""
 //	"3M|2C|B", "1C"
 //	"3M|2C",   "1C|B"
@@ -378,34 +459,3 @@ public class Problem {
 //	"1C|B", "3M|2C"
 //	"1C",   "3M|2C|B"
 //	"",     "3M|3C|B"
-//	
-
-
-////Ms leftSide
-//howManyMLeft = howManyMLeft(previousState) - 2;
-//if (howManyMLeft < 0 || howManyMLeft > 3) break;
-//if (howManyMLeft != 0) { newLeftSide.add(String.format("%sM", String.valueOf(howManyMLeft))); }
-////Cs leftSide
-//howManyCLeft = howManyCLeft(previousState);
-//if (howManyCLeft != 0) { newLeftSide.add(String.format("%sC", String.valueOf(howManyCLeft))); }
-////Ms rightSide
-//howManyMRight = howManyMRight(previousState) + 2;
-//if (howManyMRight < 0 || howManyMRight > 3) break;
-//if (howManyMRight != 0) { newRightSide.add(String.format("%sM", String.valueOf(howManyMRight))); }
-////Cs rightside
-//howManyCRight = howManyCRight(previousState);
-//if (howManyCRight != 0) { newRightSide.add(String.format("%sC", String.valueOf(howManyCRight))); }
-////Boat
-//if (previousRiverSide.equals(RiverSide.LeftSide)) 
-//	{ newRightSide.add("B"); }
-//else
-//	{ newLeftSide.add("B"); }
-//
-////Join state fragments and compose node
-//State newState = new State(join(newLeftSide), join(newRightSide));
-//if (validStates.contains(newState)) { 
-//	newNode = new Node(newState, new Action("2M"));
-//	return newNode;
-//}
-////Check if the State is in the valid states list
-

@@ -1,9 +1,15 @@
 package com.softelement.treesearch;
 
+/**
+ * 
+ * @author "SoftElement"
+ * Wrapper POJO class to store some additional info to a Node.
+ *
+ */
 public class NodeWrapper {
 	
 	private Node node;
-	private int nodePosition;
+	private int nodePosition;	//Current position of node in fringe
 	
 	public Node getNode() {
 		return node;
